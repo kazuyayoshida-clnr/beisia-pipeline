@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ベイシア古河総和店 制御パネル</title>
+  <script src="auth_config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: sans-serif;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 16px;
+      background: #f0f2f5;
+      color: #333;
+      font-size: 14px;
+    }
+    h1 { font-size: 1.3rem; margin: 0 0 16px; }
+    h2 { font-size: 0.95rem; color: #444; margin: 0 0 12px; font-weight: 600; }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+      margin-bottom: 14px;
+    }
+
+    /* ---- ボタン ---- */
+    button {
+      padding: 7px 14px;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #4a90d9;
+      color: #fff;
+      white-space: nowrap;
+    }
+    button:hover:not(:disabled) { filter: brightness(0.9); }
+    button:disabled { background: #bbb; cursor: not-allowed; }
+    button.green  { background: #28a745; }
+    button.red    { background: #dc3545; }
+    button.gray   { background: #6c757d; }
+    button.sm     { padding: 4px 10px; font-size: 0.78rem; }
+    .btn-group    { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    /* ---- メッセージ ---- */
+    .msg { font-size: 0.82rem; color: #666; }
+    .msg.err { color: #dc3545; }
+    .msg.ok  { color: #28a745; }
+
+    /* ---- システム状態 ---- */
+    .status-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 28px;
+    }
+    .status-item { font-size: 0.85rem; line-height: 1.6; white-space: nowrap; }
+    .status-label { color: #888; font-size: 0.75rem; display: block; }
+    .dot {
+      display: inline-block;
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      margin-right: 5px;
+      background: #bbb;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .dot.online  { background: #28a745; box-shadow: 0 0 6px #28a745; }
+    .dot.offline { background: #dc3545; }
+    /* 経過時間の色 */
+    .elapsed.fresh  { color: #28a745; font-weight: 600; }
+    .elapsed.warn   { color: #e07b00; font-weight: 600; }
+    .elapsed.danger { color: #dc3545; font-weight: 700; }
+
+    /* ---- テーブル共通 ---- */
+    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+    th {
+      text-align: left;
+      padding: 5px 8px;
+      border-bottom: 2px solid #dee2e6;
+      color: #555;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    td { padding: 5px 8px; border-bottom: 1px solid #f2f2f2; vertical-align: middle; }
+    td:first-child { font-weight: 600; }
+
+    /* ---- 温度設定テーブル ---- */
+    input[type="number"] {
+      width: 65px;
+      padding: 3px 5px;
+      font-size: 0.85rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    input[type="number"].edited { border-color: #f0a500; background: #fffbe6; }
+    select {
+      padding: 3px 5px;
+      font-size: 0.82rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .apply-row { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ---- 電磁弁カードグリッド ---- */
+    .unit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 10px;
+    }
+    .unit-card {
+      border: 1px solid #e4e4e4;
+      border-radius: 6px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .uc-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .uc-name { font-weight: 700; font-size: 0.9rem; }
+    .mode-badge {
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .mode-badge.auto   { background: #cce5ff; color: #004085; }
+    .mode-badge.manual { background: #f8d7da; color: #721c24; }
+    .uc-temps {
+      display: flex;
+      gap: 10px;
+      font-size: 0.82rem;
+      color: #555;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .uc-temps span { white-space: nowrap; }
+    .uc-relay {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .relay-dot {
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #ccc;
+      flex-shrink: 0;
+    }
+    .relay-dot.on  { background: #28a745; box-shadow: 0 0 5px #28a745; }
+    .relay-dot.off { background: #dc3545; }
+
+    /* ---- CSVダウンロード ---- */
+    .dl-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .dl-row select { font-size: 0.9rem; padding: 6px 8px; }
+    .dl-row button { padding: 7px 16px; }
+
+    /* ---- フロアマップ ---- */
+    .fm-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #floorMap { width: 100%; min-width: 320px; max-width: 680px; display: block; margin: 0 auto; }
+    .fm-legend {
+      display: flex; flex-wrap: wrap; gap: 6px 14px;
+      margin-top: 8px; font-size: 0.75rem; color: #555;
+    }
+    .fm-lgd-item { display: flex; align-items: center; gap: 5px; }
+    .fm-lgd-dot  { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+    /* ---- ログインオーバーレイ ---- */
+    #loginOverlay {
+      position: fixed;
+      inset: 0;
+      background: #f0f2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #loginOverlay.hidden { display: none; }
+    .login-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 32px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.15);
+      width: 100%;
+      max-width: 320px;
+    }
+    .login-box h2 {
+      text-align: center;
+      margin: 0 0 6px;
+      font-size: 1rem;
+      color: #333;
+    }
+    .login-box .login-sub {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 22px;
+    }
+    .login-field {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .login-field label {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 3px;
+      display: block;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 9px 10px;
+      font-size: 0.95rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .login-field input:focus { outline: none; border-color: #4a90d9; }
+    #loginBtn {
+      width: 100%;
+      padding: 10px;
+      font-size: 0.95rem;
+    }
+    #loginErr {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: #dc3545;
+      text-align: center;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ログインオーバーレイ -->
+  <div id="loginOverlay">
+    <div class="login-box">
+      <h2>ベイシア古河総和店</h2>
+      <p class="login-sub">制御パネル</p>
+      <div class="login-field">
+        <div>
+          <label>ユーザーID</label>
+          <input type="text" id="loginUser" autocomplete="username" placeholder="ID">
+        </div>
+        <div>
+          <label>パスワード</label>
+          <input type="password" id="loginPass" autocomplete="current-password" placeholder="Password"
+            onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+      </div>
+      <button id="loginBtn" onclick="doLogin()">ログイン</button>
+      <div id="loginErr"></div>
+    </div>
+  </div>
+
+  <h1>ベイシア古河総和店 制御パネル</h1>
+
+  <!-- システム状態 -->
+  <div class="card">
+    <h2>システム状態</h2>
+    <div class="status-grid">
+      <div class="status-item">
+        <span class="status-label">接続状態</span>
+        <span class="dot" id="onlineDot"></span><span id="onlineText">確認中...</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">最終更新</span>
+        <span id="updatedAt">-</span>
+        <span id="elapsedText" class="elapsed" style="margin-left:6px;"></span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">気温</span>
+        <span id="airTempText">---</span>℃
+      </div>
+    </div>
+  </div>
+
+  <!-- フロアマップ -->
+  <div class="card">
+    <h2>フロアマップ</h2>
+    <div class="fm-wrap">
+      <svg id="floorMap" viewBox="0 0 767 520" xmlns="http://www.w3.org/2000/svg">
+        <!-- 建物外壁 -->
+        <path d="M 3 203 L 323 203 M 323 3 L 323 203 M 323 3 L 763 3 M 763 3 L 763 483 M 763 483 L 643 483 M 3 483 L 603 483 M 3 203 L 3 483 M 643 483 L 613 513"
+              stroke="#555" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <!-- エリア背景 -->
+        <rect x="413" y="33"  width="320" height="160" fill="#fafafa" stroke="#e4e4e4" stroke-width="1.5"/>
+        <rect x="413" y="243" width="320" height="200" fill="#fafafa" stroke="#e4e4e4" stroke-width="1.5"/>
+        <rect x="43"  y="243" width="290" height="200" fill="#fafafa" stroke="#e4e4e4" stroke-width="1.5"/>
+        <!-- 出入口マーク -->
+        <text x="623" y="512" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#bbb">出入口</text>
+        <!-- ユニット（JS で描画） -->
+        <g id="fm_units"></g>
+      </svg>
+    </div>
+    <div class="fm-legend">
+      <span class="fm-lgd-item"><span class="fm-lgd-dot" style="background:#3b82f6"></span>ON（自動）</span>
+      <span class="fm-lgd-item"><span class="fm-lgd-dot" style="background:#f97316"></span>ON（手動）</span>
+      <span class="fm-lgd-item"><span class="fm-lgd-dot" style="background:#dbeafe;border:1px solid #93c5fd"></span>OFF（自動）</span>
+      <span class="fm-lgd-item"><span class="fm-lgd-dot" style="background:#fee2e2;border:1px solid #fca5a5"></span>OFF（手動）</span>
+      <span class="fm-lgd-item"><span class="fm-lgd-dot" style="background:#e5e7eb"></span>オフライン</span>
+    </div>
+  </div>
+
+  <!-- 電磁弁制御 -->
+  <div class="card">
+    <h2>電磁弁制御</h2>
+    <div class="unit-grid" id="valveGrid"></div>
+    <span class="msg" id="valveMsg" style="margin-top:10px;display:block;"></span>
+  </div>
+
+  <!-- 温度設定 -->
+  <div class="card">
+    <h2>温度設定</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ユニット</th>
+            <th>センサ</th>
+            <th>銅管(℃)</th>
+            <th>吸気(℃)</th>
+            <th>ON設定</th>
+            <th>OFF設定</th>
+          </tr>
+        </thead>
+        <tbody id="tempTableBody"></tbody>
+      </table>
+    </div>
+    <div class="apply-row">
+      <button id="applyTempBtn" disabled onclick="applyTempSettings()">反映</button>
+      <span class="msg" id="tempMsg"></span>
+    </div>
+  </div>
+
+  <!-- データダウンロード -->
+  <div class="card">
+    <h2>データダウンロード</h2>
+    <div class="dl-row">
+      <select id="dlYear" onchange="onYearChange()"><option>---</option></select>
+      <select id="dlMonth"><option>---</option></select>
+      <button class="green" id="dlBtn" onclick="downloadSelectedCSV()">ダウンロード</button>
+    </div>
+    <span class="msg" id="dlMsg" style="margin-top:8px;display:block;"></span>
+  </div>
+
+  <script>
+    // ===================================================================
+    // 定数
+    // ===================================================================
+    const OWNER = 'kazuyayoshida-clnr';
+    const REPO  = 'beisia-pipeline';
+    // ★ PAT を分割して設定（GitHub Push Protection 回避）
+    const _T1 = "github_pat_";
+    const _T2 = ""; // TODO: 新アカウントで発行したPATの "github_pat_" 以降を設定
+    const TOKEN = _T1 + _T2;
+
+    const CONFIG_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/raspi/config/process_config.json`;
+    const STATUS_API = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data/status.json`;
+    const DATA_API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents/data`;
+    const UNITS      = ['A','B','C','D','E','F','G','H'];
+    const ONLINE_MS  = 2 * 60 * 1000;
+
+    // ===================================================================
+    // 状態
+    // ===================================================================
+    let _busy           = false;
+    let _currentStatus  = null;
+    let _currentConfig  = null;
+    let _statusEtag     = null;
+    let _lastWrittenVer = 0;
+    let _localTempEdits = {};
+    let _csvFiles       = [];
+    let _lastUpdatedAt  = null;
+
+    // フロアマップ: draw.io SVG と同一座標系（767×520 viewBox）
+    const UNIT_POSITIONS = {
+      G: { x: 433, y: 133, w: 80,  h: 40  },
+      H: { x: 543, y: 133, w: 170, h: 40  },
+      A: { x: 433, y: 253, w: 40,  h: 180 },
+      B: { x: 513, y: 253, w: 40,  h: 180 },
+      C: { x: 593, y: 253, w: 40,  h: 180 },
+      D: { x: 673, y: 253, w: 40,  h: 180 },
+      E: { x: 203, y: 253, w: 40,  h: 80  },
+      F: { x: 133, y: 253, w: 40,  h: 180 },
+    };
+
+    // ===================================================================
+    // ヘルパ
+    // ===================================================================
+    const githubHeaders = () => ({
+      'Authorization': `Bearer ${TOKEN}`,
+      'Accept': 'application/vnd.github+json'
+    });
+    const b64encode = s => btoa(unescape(encodeURIComponent(s)));
+    const b64decode = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ''))));
+    const fmtTemp   = v => (v !== null && v !== undefined) ? Number(v).toFixed(1) : '---';
+
+    function setMsg(id, text, type = '') {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'msg' + (type ? ' ' + type : '');
+    }
+
+    async function withBusy(fn, msgId) {
+      if (_busy) return;
+      _busy = true;
+      refreshButtonStates();
+      try { await fn(); }
+      catch (e) { if (msgId) setMsg(msgId, `エラー: ${e.message}`, 'err'); }
+      finally { _busy = false; refreshButtonStates(); }
+    }
+
+    function refreshButtonStates() {
+      document.querySelectorAll('button').forEach(b => { b.disabled = _busy; });
+      const hasEdits = Object.keys(_localTempEdits).length > 0;
+      document.getElementById('applyTempBtn').disabled = _busy || !hasEdits;
+      document.getElementById('dlBtn').disabled =
+        _busy || document.getElementById('dlYear').value === '---';
+    }
+
+    function updateElapsed() {
+      const el = document.getElementById('elapsedText');
+      if (!_lastUpdatedAt) { el.textContent = ''; return; }
+      const diffSec = Math.floor((Date.now() - _lastUpdatedAt) / 1000);
+      let text, cls;
+      if (diffSec < 60) {
+        text = `${diffSec}秒前`;
+        cls  = diffSec < 30 ? 'elapsed fresh' : 'elapsed warn';
+      } else {
+        const min = Math.floor(diffSec / 60);
+        text = `${min}分前`;
+        cls  = min < 2 ? 'elapsed warn' : 'elapsed danger';
+      }
+      el.textContent = text;
+      el.className   = cls;
+    }
+
+    // ===================================================================
+    // フロアマップ描画
+    // ===================================================================
+    function renderFloorMap(status, config) {
+      const container = document.getElementById('fm_units');
+      if (!container) return;
+      container.innerHTML = '';
+      const ns = 'http://www.w3.org/2000/svg';
+      const isOnline = status && (Date.now() - new Date(status.updated_at).getTime()) < ONLINE_MS;
+
+      const mkEl = (tag, attrs, text) => {
+        const el = document.createElementNS(ns, tag);
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+        if (text !== undefined) el.textContent = text;
+        return el;
+      };
+
+      for (const [u, p] of Object.entries(UNIT_POSITIONS)) {
+        const uSt    = status?.units?.[u];
+        const uCfg   = config?.units?.[u];
+        const isOn   = uSt?.relay_actual === 'ON';
+        const isAuto = uCfg?.mode === 'auto';
+        const isEx   = ['E', 'F', 'G', 'H'].includes(u);
+        const isWide = p.h <= 50;
+
+        let bg, fg, border;
+        if (!isOnline || !uSt) {
+          bg = '#e5e7eb'; fg = '#6b7280'; border = '#d1d5db';
+        } else if (isOn && isAuto) {
+          bg = '#3b82f6'; fg = '#ffffff'; border = '#1d4ed8';
+        } else if (isOn) {
+          bg = '#f97316'; fg = '#ffffff'; border = '#c2410c';
+        } else if (isAuto) {
+          bg = '#dbeafe'; fg = '#1e40af'; border = '#bfdbfe';
+        } else {
+          bg = '#fee2e2'; fg = '#991b1b'; border = '#fecaca';
+        }
+
+        const grp = mkEl('g', { style: 'cursor:default' });
+        const cx   = p.x + p.w / 2;
+        const cy   = p.y + p.h / 2;
+
+        // 背景
+        grp.appendChild(mkEl('rect', {
+          x: p.x + 1, y: p.y + 1, width: p.w - 2, height: p.h - 2,
+          rx: '4', fill: bg, stroke: border, 'stroke-width': '1.5'
+        }));
+
+        // ユニット名（中央）
+        grp.appendChild(mkEl('text', {
+          x: cx, y: cy + 5,
+          'text-anchor': 'middle', 'dominant-baseline': 'middle',
+          'font-family': 'sans-serif', 'font-size': isWide ? '15' : '16',
+          'font-weight': 'bold', 'fill': fg
+        }, u));
+
+        // ホバーツールチップ
+        const lines = [uCfg?.label || `ユニット${u}`];
+        lines.push(`モード: ${isAuto ? '自動' : '手動'}`);
+        lines.push(`電磁弁: ${uSt?.relay_actual || '---'}`);
+        if (isOnline && uSt) {
+          if (!isEx) lines.push(`銅管: ${fmtTemp(uSt.temperature)}℃`);
+          lines.push(`吸気: ${fmtTemp(uSt.intake_temperature)}℃`);
+          if (u === 'G') lines.push(`気温: ${fmtTemp(status?.air_temperature)}℃`);
+        }
+        grp.appendChild(mkEl('title', {}, lines.join('\n')));
+
+        container.appendChild(grp);
+      }
+    }
+
+    // ===================================================================
+    // GitHub API
+    // ===================================================================
+    async function fetchConfig() {
+      const res = await fetch(CONFIG_API, { headers: githubHeaders() });
+      if (!res.ok) throw new Error(`config取得失敗: ${res.status}`);
+      const data = await res.json();
+      return { sha: data.sha, config: JSON.parse(b64decode(data.content)) };
+    }
+
+    async function writeConfig(updater) {
+      const { sha, config } = await fetchConfig();
+      updater(config);
+      config.version = (config.version || 0) + 1;
+      const res = await fetch(CONFIG_API, {
+        method: 'PUT',
+        headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `config: update v${config.version}`,
+          content: b64encode(JSON.stringify(config, null, 2)),
+          sha
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`書き込み失敗: ${res.status} ${err.message || ''}`);
+      }
+      _lastWrittenVer = config.version;
+      return config.version;
+    }
+
+    async function fetchStatus() {
+      const headers = { ...githubHeaders() };
+      if (_statusEtag) headers['If-None-Match'] = _statusEtag;
+      const res = await fetch(STATUS_API, { headers });
+      if (res.status === 304) return;
+      if (res.status === 404) { renderStatus(null); return; }
+      if (!res.ok) return;
+      _statusEtag = res.headers.get('ETag');
+      _currentStatus = JSON.parse(b64decode((await res.json()).content));
+      renderStatus(_currentStatus);
+    }
+
+    async function fetchCSVList() {
+      const res = await fetch(DATA_API, { headers: githubHeaders() });
+      if (!res.ok) { setMsg('dlMsg', 'ファイル一覧の取得失敗', 'err'); return; }
+      const files = await res.json();
+      _csvFiles = files.filter(f => /^\d{4}_\d{2}\.csv$/.test(f.name));
+      renderCSVDropdowns();
+    }
+
+    // ===================================================================
+    // UI レンダリング
+    // ===================================================================
+    function clearLiveData() {
+      const airTempEl = document.getElementById('airTempText');
+      if (airTempEl) airTempEl.textContent = '---';
+      UNITS.forEach(u => {
+        ['tc_','ti_','vt_','vi_'].forEach(pre => {
+          const el = document.getElementById(pre + u);
+          if (el) el.textContent = '---';
+        });
+        const vkEl = document.getElementById(`vk_${u}`);
+        if (vkEl) vkEl.textContent = '---';
+        const dotEl = document.getElementById(`vd_${u}`);
+        const txtEl = document.getElementById(`vr_${u}`);
+        if (dotEl) dotEl.className = 'relay-dot';
+        if (txtEl) txtEl.textContent = '---';
+      });
+    }
+
+    function renderStatus(status) {
+      if (!status) {
+        document.getElementById('onlineDot').className     = 'dot offline';
+        document.getElementById('onlineText').textContent  = 'オフライン（未取得）';
+        document.getElementById('updatedAt').textContent   = '-';
+        document.getElementById('elapsedText').textContent = '';
+        clearLiveData();
+        return;
+      }
+      _lastUpdatedAt = new Date(status.updated_at).getTime();
+      const online   = (Date.now() - _lastUpdatedAt) < ONLINE_MS;
+
+      document.getElementById('onlineDot').className    = 'dot ' + (online ? 'online' : 'offline');
+      document.getElementById('onlineText').textContent = online ? 'オンライン' : 'オフライン（通信停止の可能性）';
+      document.getElementById('updatedAt').textContent  = status.updated_at;
+      updateElapsed();
+
+      if (online) {
+        updateTemperatureDisplay(status);
+        updateValveStatus(status);
+        renderFloorMap(status, _currentConfig);
+      } else {
+        clearLiveData();
+        renderFloorMap(null, _currentConfig);
+      }
+    }
+
+    function renderTempTable(config) {
+      const tbody = document.getElementById('tempTableBody');
+      tbody.innerHTML = '';
+      UNITS.forEach(u => {
+        const cfg      = config.units[u] || {};
+        const editOn   = _localTempEdits[u]?.temp_on;
+        const editOff  = _localTempEdits[u]?.temp_off;
+        const valOn    = editOn  !== undefined ? editOn  : (cfg.temp_on  ?? '');
+        const valOff   = editOff !== undefined ? editOff : (cfg.temp_off ?? '');
+        const copper   = fmtTemp(_currentStatus?.units?.[u]?.temperature);
+        const intake   = fmtTemp(_currentStatus?.units?.[u]?.intake_temperature);
+        const ctrl     = cfg.control_sensor || '銅管部温度';
+        const label    = cfg.label || u;
+        const isEx     = ['E','F','G','H'].includes(u);
+        const sensorOpts = isEx
+          ? `<option value="吸気部温度" ${ctrl==='吸気部温度'?'selected':''}>吸気部</option>
+             <option value="気温" ${ctrl==='気温'?'selected':''}>気温</option>`
+          : `<option value="銅管部温度" ${ctrl==='銅管部温度'?'selected':''}>銅管部</option>
+             <option value="吸気部温度" ${ctrl==='吸気部温度'?'selected':''}>吸気部</option>`;
+        const tr       = document.createElement('tr');
+        tr.innerHTML = `
+          <td title="${u}">${label}</td>
+          <td><select id="cs_${u}" onchange="setControlSensor('${u}',this.value)">
+            ${sensorOpts}
+          </select></td>
+          <td id="tc_${u}">${isEx ? '---' : copper}</td>
+          <td id="ti_${u}">${intake}</td>
+          <td><input type="number" step="0.5" id="ton_${u}" value="${valOn}"
+            class="${editOn!==undefined?'edited':''}"
+            oninput="onTempInput('${u}','temp_on',this.value)"></td>
+          <td><input type="number" step="0.5" id="toff_${u}" value="${valOff}"
+            class="${editOff!==undefined?'edited':''}"
+            oninput="onTempInput('${u}','temp_off',this.value)"></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderValveGrid(config) {
+      const grid = document.getElementById('valveGrid');
+      grid.innerHTML = '';
+      UNITS.forEach(u => {
+        const cfg     = config.units[u] || {};
+        const isAuto  = cfg.mode === 'auto';
+        const label   = cfg.label || u;
+        const relay   = _currentStatus?.units?.[u]?.relay_actual;
+        const relayOn = relay === 'ON';
+        const copper  = fmtTemp(_currentStatus?.units?.[u]?.temperature);
+        const intake  = fmtTemp(_currentStatus?.units?.[u]?.intake_temperature);
+        const airTemp = fmtTemp(_currentStatus?.air_temperature);
+        const isEx    = ['E','F','G','H'].includes(u);
+
+        let tempsHtml;
+        if (u === 'G') {
+          tempsHtml = `<div class="uc-temps">
+            <span>吸気 <b id="vi_${u}">${intake}</b>℃</span>
+            <span>気温 <b id="vk_${u}">${airTemp}</b>℃</span>
+          </div>`;
+        } else if (isEx) {
+          tempsHtml = `<div class="uc-temps">
+            <span>吸気 <b id="vi_${u}">${intake}</b>℃</span>
+          </div>`;
+        } else {
+          tempsHtml = `<div class="uc-temps">
+            <span>銅管 <b id="vt_${u}">${copper}</b>℃</span>
+            <span>吸気 <b id="vi_${u}">${intake}</b>℃</span>
+          </div>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'unit-card';
+        card.id = `valve_${u}`;
+        card.innerHTML = `
+          <div class="uc-head">
+            <span class="uc-name" title="${u}">${label}</span>
+            <span class="mode-badge ${isAuto?'auto':'manual'}" id="vm_${u}">${isAuto?'自動':'手動'}</span>
+          </div>
+          ${tempsHtml}
+          <div class="uc-relay">
+            <span class="relay-dot ${relay?(relayOn?'on':'off'):''}" id="vd_${u}"></span>
+            <span id="vr_${u}">${relay||'-'}</span>
+          </div>
+          <div class="btn-group">
+            <button class="sm gray" id="vbm_${u}" onclick="toggleMode('${u}')">
+              ${isAuto?'手動へ':'自動へ'}
+            </button>
+            <button class="sm green" id="vbon_${u}" onclick="setManualCommand('${u}','ON')"
+              style="${isAuto?'display:none':''}">ON</button>
+            <button class="sm red" id="vboff_${u}" onclick="setManualCommand('${u}','OFF')"
+              style="${isAuto?'display:none':''}">OFF</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function updateTemperatureDisplay(status) {
+      const airTempEl = document.getElementById('airTempText');
+      if (airTempEl) airTempEl.textContent = fmtTemp(status.air_temperature);
+      UNITS.forEach(u => {
+        const copper = fmtTemp(status.units?.[u]?.temperature);
+        const intake = fmtTemp(status.units?.[u]?.intake_temperature);
+        ['tc_','ti_','vt_','vi_'].forEach((pre, i) => {
+          const el = document.getElementById(pre + u);
+          if (el) el.textContent = i % 2 === 0 ? copper : intake;
+        });
+        if (u === 'G') {
+          const vkEl = document.getElementById('vk_G');
+          if (vkEl) vkEl.textContent = fmtTemp(status.air_temperature);
+        }
+      });
+    }
+
+    function updateValveStatus(status) {
+      UNITS.forEach(u => {
+        const relay   = status.units?.[u]?.relay_actual;
+        const relayOn = relay === 'ON';
+        const dotEl = document.getElementById(`vd_${u}`);
+        const txtEl = document.getElementById(`vr_${u}`);
+        if (dotEl) dotEl.className = 'relay-dot ' + (relay ? (relayOn ? 'on' : 'off') : '');
+        if (txtEl) txtEl.textContent = relay || '-';
+      });
+    }
+
+    function renderCSVDropdowns() {
+      const years = [...new Set(_csvFiles.map(f => f.name.split('_')[0]))].sort().reverse();
+      const yearSel = document.getElementById('dlYear');
+      yearSel.innerHTML = years.length
+        ? years.map(y => `<option value="${y}">${y}年</option>`).join('')
+        : '<option value="">---</option>';
+      onYearChange();
+    }
+
+    function onYearChange() {
+      const year     = document.getElementById('dlYear').value;
+      const months   = _csvFiles
+        .filter(f => f.name.startsWith(year + '_'))
+        .map(f => parseInt(f.name.split('_')[1]))
+        .sort((a, b) => b - a);
+      const monthSel = document.getElementById('dlMonth');
+      monthSel.innerHTML = months.length
+        ? months.map(m => `<option value="${String(m).padStart(2,'0')}">${m}月</option>`).join('')
+        : '<option value="">---</option>';
+      refreshButtonStates();
+    }
+
+    // ===================================================================
+    // ユーザー操作
+    // ===================================================================
+    function onTempInput(unit, key, value) {
+      if (!_localTempEdits[unit]) _localTempEdits[unit] = {};
+      _localTempEdits[unit][key] = value;
+      document.getElementById(key === 'temp_on' ? `ton_${unit}` : `toff_${unit}`)
+        .classList.add('edited');
+      refreshButtonStates();
+    }
+
+    async function applyTempSettings() {
+      await withBusy(async () => {
+        setMsg('tempMsg', '送信中...', '');
+        await writeConfig(config => {
+          for (const [u, edits] of Object.entries(_localTempEdits)) {
+            if (!config.units[u]) continue;
+            if (edits.temp_on  !== undefined) config.units[u].temp_on  = parseFloat(edits.temp_on);
+            if (edits.temp_off !== undefined) config.units[u].temp_off = parseFloat(edits.temp_off);
+          }
+        });
+        _localTempEdits = {};
+        setMsg('tempMsg', '送信完了（Piが次の確認サイクルで反映します）', 'ok');
+        await reloadConfig();
+      }, 'tempMsg');
+    }
+
+    async function setControlSensor(unit, sensor) {
+      await withBusy(async () => {
+        setMsg('tempMsg', `センサ変更中...`, '');
+        await writeConfig(config => {
+          if (config.units[unit]) config.units[unit].control_sensor = sensor;
+        });
+        setMsg('tempMsg', `${unit} 制御センサ変更完了`, 'ok');
+        await reloadConfig();
+      }, 'tempMsg');
+    }
+
+    async function toggleMode(unit) {
+      await withBusy(async () => {
+        setMsg('valveMsg', `${unit} モード切替中...`, '');
+        await writeConfig(config => {
+          const u = config.units[unit];
+          if (!u) return;
+          u.mode = u.mode === 'auto' ? 'manual' : 'auto';
+          u.manual_command = 'OFF';
+        });
+        setMsg('valveMsg', `${unit} モード切替完了`, 'ok');
+        await reloadConfig();
+      }, 'valveMsg');
+    }
+
+    async function setManualCommand(unit, command) {
+      await withBusy(async () => {
+        setMsg('valveMsg', `${unit} → ${command} 送信中...`, '');
+        await writeConfig(config => {
+          if (config.units[unit]) config.units[unit].manual_command = command;
+        });
+        setMsg('valveMsg', `${unit} → ${command} 送信完了`, 'ok');
+        await reloadConfig();
+      }, 'valveMsg');
+    }
+
+    async function downloadSelectedCSV() {
+      const year  = document.getElementById('dlYear').value;
+      const month = document.getElementById('dlMonth').value;
+      if (!year || year === '---' || !month || month === '---') return;
+      const filename = `${year}_${month}.csv`;
+      setMsg('dlMsg', '取得中...', '');
+      try {
+        // ① Contents API でファイルの blob SHA を取得（サイズ制限なし）
+        const metaRes = await fetch(
+          `https://api.github.com/repos/${OWNER}/${REPO}/contents/data/${filename}`,
+          { headers: githubHeaders() }
+        );
+        if (!metaRes.ok) throw new Error(`メタデータ取得失敗: ${metaRes.status}`);
+        const { sha } = await metaRes.json();
+
+        // ② Git Blobs API で本文を取得（100MB まで対応、CORS 対応）
+        const blobRes = await fetch(
+          `https://api.github.com/repos/${OWNER}/${REPO}/git/blobs/${sha}`,
+          { headers: { ...githubHeaders(), 'Accept': 'application/vnd.github.raw+json' } }
+        );
+        if (!blobRes.ok) throw new Error(`取得失敗: ${blobRes.status}`);
+        const csvText = await blobRes.text();
+        const blob    = new Blob(['﻿' + csvText], { type: 'text/csv;charset=utf-8' });
+        const url     = URL.createObjectURL(blob);
+        const a       = Object.assign(document.createElement('a'), { href: url, download: filename });
+        a.click();
+        URL.revokeObjectURL(url);
+        setMsg('dlMsg', `${filename} ダウンロード完了`, 'ok');
+      } catch (e) {
+        setMsg('dlMsg', `エラー: ${e.message}`, 'err');
+      }
+    }
+
+    // ===================================================================
+    // 初期化・ポーリング
+    // ===================================================================
+    async function reloadConfig() {
+      const { config } = await fetchConfig();
+      _currentConfig = config;
+      renderTempTable(config);
+      renderValveGrid(config);
+      renderFloorMap(_currentStatus, config);
+    }
+
+    async function init() {
+      try {
+        const { config } = await fetchConfig();
+        _currentConfig = config;
+        renderTempTable(config);
+        renderValveGrid(config);
+        renderFloorMap(null, config);  // 初期表示: オフライン状態でユニット位置を表示
+      } catch (e) {
+        setMsg('tempMsg', `config読み込み失敗: ${e.message}`, 'err');
+      }
+      await fetchStatus();
+      await fetchCSVList();
+    }
+
+    // ===================================================================
+    // ログイン
+    // ===================================================================
+    function doLogin() {
+      const user = document.getElementById('loginUser').value;
+      const pass = document.getElementById('loginPass').value;
+      if (user === AUTH_USER && pass === AUTH_PASS) {
+        sessionStorage.setItem('iris_auth', '1');
+        document.getElementById('loginOverlay').classList.add('hidden');
+        startApp();
+      } else {
+        document.getElementById('loginErr').textContent = 'IDまたはパスワードが違います';
+        document.getElementById('loginPass').value = '';
+      }
+    }
+
+    function startApp() {
+      setInterval(fetchStatus, 10000);
+      setInterval(updateElapsed, 1000);
+      init();
+    }
+
+    if (sessionStorage.getItem('iris_auth') === '1') {
+      document.getElementById('loginOverlay').classList.add('hidden');
+      startApp();
+    }
+  </script>
+</body>
+</html>

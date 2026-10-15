@@ -1,0 +1,18 @@
+[Unit]
+Description=Iris Pipeline system monitor (network LED + reset switch)
+After=network.target
+
+[Service]
+Type=simple
+User=eiji
+WorkingDirectory=/home/eiji/beisia-pipeline/raspi
+Environment="VIRTUAL_ENV=/home/eiji/beisia-pipeline/.venv"
+Environment="PATH=/home/eiji/beisia-pipeline/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/eiji/beisia-pipeline/.venv/bin/python system.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

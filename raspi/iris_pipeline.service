@@ -1,0 +1,20 @@
+[Unit]
+Description=Iris Pipeline main controller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=eiji
+WorkingDirectory=/home/eiji/beisia-pipeline/raspi
+# .venv/bin/python を直接指定することで仮想環境を使用する（source activate 相当）
+Environment="VIRTUAL_ENV=/home/eiji/beisia-pipeline/.venv"
+Environment="PATH=/home/eiji/beisia-pipeline/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/eiji/beisia-pipeline/.venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
