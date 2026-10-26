@@ -1,12 +1,12 @@
 {
-  "version": 111,
+  "version": 112,
   "units": {
     "A": {
       "label": "ユニットA",
       "temp_on": 22,
       "temp_off": 21.9,
-      "mode": "manual",
-      "manual_command": "ON",
+      "mode": "auto",
+      "manual_command": "OFF",
       "control_sensor": "銅管部温度"
     },
     "B": {
