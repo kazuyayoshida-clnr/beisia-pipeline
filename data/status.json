@@ -1,48 +1,48 @@
 {
-  "updated_at": "2026-10-31T17:05:59+09:00",
+  "updated_at": "2026-10-31T17:06:12+09:00",
   "device": {
     "applied_config_version": 115
   },
-  "air_temperature": 18.937,
+  "air_temperature": 18.875,
   "units": {
     "A": {
-      "temperature": 56.562,
+      "temperature": 56.5,
       "intake_temperature": 19.0,
       "mode": "manual",
       "relay_actual": "ON",
       "sensor_ok": true
     },
     "B": {
-      "temperature": 44.0,
-      "intake_temperature": 19.75,
+      "temperature": 43.75,
+      "intake_temperature": 19.625,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "C": {
-      "temperature": 45.062,
-      "intake_temperature": 20.875,
+      "temperature": 44.937,
+      "intake_temperature": 20.625,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "D": {
-      "temperature": 44.625,
-      "intake_temperature": 21.687,
+      "temperature": 44.187,
+      "intake_temperature": 21.5,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "E": {
       "temperature": null,
-      "intake_temperature": 19.187,
+      "intake_temperature": 19.125,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "F": {
       "temperature": null,
-      "intake_temperature": 18.562,
+      "intake_temperature": 18.5,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
@@ -56,7 +56,7 @@
     },
     "H": {
       "temperature": null,
-      "intake_temperature": 19.812,
+      "intake_temperature": 19.75,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
