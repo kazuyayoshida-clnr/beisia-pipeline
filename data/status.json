@@ -1,62 +1,62 @@
 {
-  "updated_at": "2026-11-24T09:34:28+09:00",
+  "updated_at": "2026-11-24T09:34:41+09:00",
   "device": {
     "applied_config_version": 115
   },
-  "air_temperature": 6.0,
+  "air_temperature": 5.937,
   "units": {
     "A": {
-      "temperature": 37.937,
-      "intake_temperature": 6.312,
-      "mode": "manual",
-      "relay_actual": "OFF",
-      "sensor_ok": true
-    },
-    "B": {
-      "temperature": 31.125,
-      "intake_temperature": 5.875,
-      "mode": "manual",
-      "relay_actual": "OFF",
-      "sensor_ok": true
-    },
-    "C": {
-      "temperature": 23.375,
+      "temperature": 39.812,
       "intake_temperature": 6.25,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
+    "B": {
+      "temperature": 30.812,
+      "intake_temperature": 5.812,
+      "mode": "manual",
+      "relay_actual": "OFF",
+      "sensor_ok": true
+    },
+    "C": {
+      "temperature": 22.687,
+      "intake_temperature": 6.125,
+      "mode": "manual",
+      "relay_actual": "OFF",
+      "sensor_ok": true
+    },
     "D": {
-      "temperature": 37.562,
-      "intake_temperature": 6.625,
+      "temperature": 37.062,
+      "intake_temperature": 6.5,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "E": {
       "temperature": null,
-      "intake_temperature": 8.875,
+      "intake_temperature": 8.562,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "F": {
       "temperature": null,
-      "intake_temperature": 7.187,
+      "intake_temperature": 7.062,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "G": {
       "temperature": null,
-      "intake_temperature": 6.437,
+      "intake_temperature": 7.0,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
     },
     "H": {
       "temperature": null,
-      "intake_temperature": 7.0,
+      "intake_temperature": 6.937,
       "mode": "manual",
       "relay_actual": "OFF",
       "sensor_ok": true
